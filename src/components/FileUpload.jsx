@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { parseFile } from "../utils/fileParser";
 import ProgressBar from "./ProgressBar";
+import React from "react";
 
 function FileUpload({ onFileLoaded }) {
     const [isLoading, setIsLoading] = useState(false);
