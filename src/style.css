@@ -1,0 +1,296 @@
+:root {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #172033;
+    background: #eef5fb;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top left, rgba(0, 70, 120, 0.12), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(0, 170, 160, 0.12), transparent 30%),
+        #eef5fb;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+/* Allgemeine Farben */
+
+.blue {
+    color: #0477bf;
+}
+
+.orange {
+    color: orange;
+}
+
+/* Upload-Seite */
+
+.upload-page {
+    width: min(960px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 56px 0;
+}
+
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-bottom: 32px;
+    text-align: left;
+}
+
+.app-icon {
+    display: grid;
+    place-items: center;
+    width: 84px;
+    height: 84px;
+    border-radius: 18px;
+    background: #ffffff;
+    color: white;
+    font-size: 30px;
+    box-shadow: 0 12px 28px rgba(0, 70, 120, 0.24);
+}
+
+.market-icon {
+    width: 60px;
+    height: 60px;
+}
+
+.hero h1 {
+    margin: 0;
+    font-size: 34px;
+    color: #05395f;
+}
+
+.hero p {
+    margin: 6px 0 0;
+    color: #61738a;
+}
+
+.upload-card {
+    padding: 34px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(0, 70, 120, 0.08);
+    border-radius: 24px;
+    box-shadow: 0 18px 45px rgba(0, 70, 120, 0.12);
+}
+
+.upload-card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 26px;
+}
+
+.file-icon {
+    width: 50px;
+    height: 50px;
+}
+
+.upload-card h2 {
+    margin: 0 0 8px;
+    color: #05395f;
+}
+
+.upload-card p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+/* Dropzone */
+
+.drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 260px;
+    padding: 32px;
+    border: 2px dashed #83b9dd;
+    border-radius: 22px;
+    background: #f7fbff;
+    text-align: center;
+    transition: 0.2s ease;
+}
+
+.drop-zone:hover {
+    border-color: #004678;
+    background: #f0f8ff;
+}
+
+.drop-zone input {
+    display: none;
+}
+
+.drop-zone-icon {
+    font-size: 44px;
+}
+
+.upload-icon {
+    width: 80px;
+    height: 80px;
+}
+
+.drop-zone strong {
+    font-size: 22px;
+    color: #05395f;
+}
+
+.drop-zone small {
+    color: #64748b;
+    font-size: 16px;
+}
+
+/* Buttons */
+
+.primary-button,
+.secondary-button,
+.small-button {
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 13px 20px;
+    background: linear-gradient(135deg, #004678, #0477bf);
+    color: white;
+    box-shadow: 0 10px 22px rgba(0, 70, 120, 0.22);
+}
+
+.secondary-button {
+    padding: 12px 18px;
+    background: #ffffff;
+    color: #05395f;
+}
+
+.small-button {
+    padding: 9px 13px;
+    background: #eef5fb;
+    color: #05395f;
+}
+
+.folder-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+}
+
+/* Meldungen */
+
+.info-box,
+.error-box {
+    margin-top: 18px;
+    padding: 15px 18px;
+    border-radius: 16px;
+    line-height: 1.5;
+}
+
+.info-box {
+    background: #e9f5ff;
+    color: #064c7a;
+}
+
+.error-box {
+    background: #fff0f0;
+    color: #a32222;
+}
+
+/* Progressbar */
+
+.progressbar-wrapper {
+    margin-top: 22px;
+    padding: 18px;
+    border-radius: 18px;
+    background: #f7fbff;
+    border: 1px solid #d8e5ef;
+}
+
+.progressbar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: #05395f;
+    font-weight: 700;
+}
+
+.progressbar-header strong {
+    color: #004678;
+}
+
+.progressbar {
+    position: relative;
+    width: 100%;
+    height: 14px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e3edf5;
+}
+
+.progressbar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #004678, #0477bf);
+    transition: width 0.3s ease;
+}
+
+/* Responsive Upload-Seite */
+
+@media (max-width: 900px) {
+    .hero {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .upload-page {
+        width: min(100% - 20px, 960px);
+    }
+
+    .upload-card {
+        padding: 18px;
+        border-radius: 18px;
+    }
+
+    .upload-card-header {
+        align-items: flex-start;
+    }
+
+    .hero h1 {
+        font-size: 26px;
+    }
+
+    .drop-zone {
+        min-height: 220px;
+        padding: 24px;
+    }
+
+    .drop-zone strong {
+        font-size: 19px;
+    }
+}
