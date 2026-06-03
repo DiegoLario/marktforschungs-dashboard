@@ -106,7 +106,6 @@ function FileUpload({ onFileLoaded }) {
                         </p>
                     </div>
                 </div>
-
                 <label
                     className={`drop-zone ${isDragging ? "drop-zone-active" : ""}`}
                     onDragOver={handleDragOver}
