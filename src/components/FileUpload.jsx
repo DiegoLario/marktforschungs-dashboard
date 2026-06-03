@@ -1,17 +1,22 @@
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { parseFile } from "../utils/fileParser";
 import ProgressBar from "./ProgressBar";
-import React from "react";
 
 function FileUpload({ onFileLoaded }) {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [loadedFileData, setLoadedFileData] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
 
-    async function handleFileChange(event) {
-        const file = event.target.files[0];
-
+    async function processFile(file) {
         if (!file) {
+            return;
+        }
+
+        const fileName = file.name.toLowerCase();
+
+        if (!fileName.endsWith(".csv") && !fileName.endsWith(".xlsx")) {
+            setErrorMessage("Bitte lade eine CSV- oder Excel-Datei hoch.");
             return;
         }
 
@@ -27,8 +32,36 @@ function FileUpload({ onFileLoaded }) {
             setIsLoading(false);
             setLoadedFileData(null);
         }
+    }
+
+    async function handleFileChange(event) {
+        const file = event.target.files[0];
+
+        await processFile(file);
 
         event.target.value = "";
+    }
+
+    function handleDragOver(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragging(true);
+    }
+
+    function handleDragLeave(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragging(false);
+    }
+
+    async function handleDrop(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragging(false);
+
+        const file = event.dataTransfer.files[0];
+
+        await processFile(file);
     }
 
     const handleProgressComplete = useCallback(() => {
@@ -74,7 +107,13 @@ function FileUpload({ onFileLoaded }) {
                     </div>
                 </div>
 
-                <label className="drop-zone">
+                <label
+                    className={`drop-zone ${isDragging ? "drop-zone-active" : ""}`}
+                    onDragOver={handleDragOver}
+                    onDragEnter={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
                     <input
                         type="file"
                         accept=".csv,.xlsx"
