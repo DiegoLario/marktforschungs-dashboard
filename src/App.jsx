@@ -1,8 +1,5 @@
 import { useMemo, useState } from "react";
 import FileUpload from "./components/FileUpload";
-import DataConfig from "./components/DataConfig";
-import Dashboard from "./components/Dashboard";
-import { analyseData } from "./utils/fileParser";
 
 function App() {
     const [fileData, setFileData] = useState(null);
