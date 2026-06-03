@@ -258,6 +258,16 @@ button {
     transition: width 0.3s ease;
 }
 
+.drop-zone-active {
+    border-color: #004678;
+    background: #e9f5ff;
+    transform: scale(1.01);
+}
+
+.drop-zone {
+    cursor: pointer;
+}
+
 /* Responsive Upload-Seite */
 
 @media (max-width: 900px) {
