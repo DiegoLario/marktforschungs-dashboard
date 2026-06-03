@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 function ProgressBar({ isLoading, onComplete }) {
     const [filled, setFilled] = useState(0);
