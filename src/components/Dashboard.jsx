@@ -19,9 +19,8 @@ ChartJS.register(
     Legend
 );
 
-function Dashboard({ fileData, analysis, config, onReset }) {
+function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
     const [filters, setFilters] = useState({});
-    const [showTable, setShowTable] = useState(false);
 
     const chartColors = [
         "#004678",
@@ -276,9 +275,15 @@ function Dashboard({ fileData, analysis, config, onReset }) {
                     <p>Datei: {fileData.fileName}</p>
                 </div>
 
-                <button className="secondary-button" onClick={onReset}>
-                    Neue Datei hochladen
-                </button>
+                <div className="header-actions">
+                    <button className="primary-button real-button" onClick={onOpenTable}>
+                        Datentabelle anzeigen
+                    </button>
+
+                    <button className="secondary-button" onClick={onReset}>
+                        Neue Datei hochladen
+                    </button>
+                </div>
             </div>
 
             <div className="summary-grid">
