@@ -2,11 +2,13 @@ import React, { useMemo, useState } from "react";
 import FileUpload from "./components/FileUpload";
 import DataConfig from "./components/DataConfig";
 import Dashboard from "./components/Dashboard";
+import DataTable from "./components/DataTable";
 import { analyseData } from "./utils/fileParser";
 
 function App() {
     const [fileData, setFileData] = useState(null);
     const [config, setConfig] = useState(null);
+    const [currentPage, setCurrentPage] = useState("upload");
 
     const analysis = useMemo(() => {
         if (!fileData) {
@@ -19,24 +21,35 @@ function App() {
     function handleFileLoaded(parsedFile) {
         setFileData(parsedFile);
         setConfig(null);
+        setCurrentPage("config");
     }
 
     function handleStartDashboard(newConfig) {
         setConfig(newConfig);
+        setCurrentPage("dashboard");
     }
 
     function handleReset() {
         setFileData(null);
         setConfig(null);
+        setCurrentPage("upload");
     }
 
-    if (!fileData) {
+    function handleOpenTable() {
+        setCurrentPage("table");
+    }
+
+    function handleBackToDashboard() {
+        setCurrentPage("dashboard");
+    }
+
+    if (!fileData || currentPage === "upload") {
         return (
             <FileUpload onFileLoaded={handleFileLoaded} />
         );
     }
 
-    if (fileData && !config) {
+    if (fileData && !config && currentPage === "config") {
         return (
             <DataConfig
                 fileData={fileData}
@@ -47,12 +60,24 @@ function App() {
         );
     }
 
+    if (fileData && config && currentPage === "table") {
+        return (
+            <DataTable
+                rows={fileData.rows}
+                columns={fileData.columns}
+                fileName={fileData.fileName}
+                onBack={handleBackToDashboard}
+            />
+        );
+    }
+
     return (
         <Dashboard
             fileData={fileData}
             analysis={analysis}
             config={config}
             onReset={handleReset}
+            onOpenTable={handleOpenTable}
         />
     );
 }
