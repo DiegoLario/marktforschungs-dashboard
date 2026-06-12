@@ -695,6 +695,145 @@ tr:hover td {
     }
 }
 
+.summary-card small {
+    display: block;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.dashboard-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.compact-card {
+    margin-bottom: 0;
+}
+
+.active-filter-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.active-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 999px;
+    background: #e8f1f8;
+    color: #05395f;
+    font-size: 14px;
+}
+
+.active-filter-item strong {
+    font-weight: 800;
+}
+
+.active-filter-item span {
+    color: #0477bf;
+    font-weight: 700;
+}
+
+.top-answer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 14px 0 0;
+    padding-left: 22px;
+}
+
+.top-answer-list li {
+    color: #334155;
+    line-height: 1.5;
+}
+
+.top-answer-list li span {
+    display: inline-block;
+    max-width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+    white-space: nowrap;
+}
+
+.top-answer-list li strong {
+    margin-left: 8px;
+    color: #0477bf;
+}
+
+.display-name-field {
+    margin: 16px 0 12px;
+}
+
+.display-name-field label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #334155;
+    font-weight: 700;
+}
+
+.display-name-field input {
+    max-width: 460px;
+}
+
+@media (max-width: 900px) {
+    .dashboard-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .display-name-field input {
+        max-width: 100%;
+    }
+}
+
+.numeric-overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.numeric-overview-card {
+    padding: 18px;
+    border-radius: 18px;
+    background: #f7fbff;
+    border: 1px solid #d8e5ef;
+}
+
+.numeric-overview-card span {
+    display: block;
+    margin-bottom: 8px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.numeric-overview-card strong {
+    color: #05395f;
+    font-size: 24px;
+}
+
+.full-width-card {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+    .numeric-overview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .full-width-card {
+        grid-column: auto;
+    }
+}
 
 .progressbar-wrapper {
     margin-top: 22px;
@@ -842,6 +981,306 @@ tr:hover td {
     .hero h1,
     .page-header h1 {
         font-size: 26px;
+    }
+}
+
+/* Animationen */
+
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes softPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(4, 119, 191, 0.25);
+    }
+
+    70% {
+        box-shadow: 0 0 0 14px rgba(4, 119, 191, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(4, 119, 191, 0);
+    }
+}
+
+@keyframes progressShine {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(100%);
+    }
+}
+
+/* Weiches Erscheinen */
+
+.upload-card,
+.content-card,
+.summary-card,
+.table-control-card,
+.excel-table-wrapper {
+    animation: fadeSlideUp 0.45s ease both;
+}
+
+/* Kleine Verzögerung bei mehreren Karten */
+
+.summary-grid .summary-card:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.summary-grid .summary-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.summary-grid .summary-card:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.summary-grid .summary-card:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+/* Hover auf Karten */
+
+.summary-card,
+.content-card,
+.upload-card,
+.table-control-card {
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.summary-card:hover,
+.content-card:hover,
+.upload-card:hover,
+.table-control-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 22px 52px rgba(0, 70, 120, 0.16);
+    border-color: rgba(4, 119, 191, 0.22);
+}
+
+/* Buttons lebendiger machen */
+
+.primary-button,
+.secondary-button,
+.small-button,
+.table-pagination button {
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease,
+        opacity 0.18s ease;
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.small-button:hover,
+.table-pagination button:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+.primary-button:hover {
+    box-shadow: 0 14px 28px rgba(0, 70, 120, 0.26);
+}
+
+/* Dropzone Animation */
+
+.drop-zone {
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.drop-zone:hover {
+    transform: translateY(-2px);
+}
+
+.drop-zone-active {
+    animation: softPulse 1.2s infinite;
+}
+
+/* Progressbar Shine */
+
+.progressbar-fill {
+    position: relative;
+    overflow: hidden;
+}
+
+.progressbar-fill::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.45),
+        transparent
+    );
+    animation: progressShine 1.4s infinite;
+}
+
+/* Tabellen-Hover */
+
+.excel-table tr {
+    transition: background 0.15s ease;
+}
+
+.excel-table td {
+    transition: background 0.15s ease;
+}
+
+.excel-table tr:hover td {
+    background: #eef7ff;
+}
+
+/* Sortierbutton Feedback */
+
+.table-sort-button {
+    transition: color 0.15s ease;
+}
+
+.table-sort-button:hover {
+    color: #0477bf;
+}
+
+@keyframes successPop {
+    0% {
+        opacity: 0;
+        transform: scale(0.85) rotate(-2deg);
+    }
+
+    60% {
+        opacity: 1;
+        transform: scale(1.04) rotate(1deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(0);
+    }
+}
+
+.info-box {
+    animation: successPop 0.55s ease both;
+}
+
+
+@keyframes filterBounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.6) translateY(-8px);
+    }
+
+    60% {
+        opacity: 1;
+        transform: scale(1.08) translateY(2px);
+    }
+
+    100% {
+        transform: scale(1) translateY(0);
+    }
+}
+
+.active-filter-item {
+    animation: filterBounceIn 0.35s ease both;
+}
+
+@keyframes errorShake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-8px);
+    }
+
+    40% {
+        transform: translateX(8px);
+    }
+
+    60% {
+        transform: translateX(-5px);
+    }
+
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+.error-box {
+    animation: errorShake 0.45s ease;
+}
+
+.chart-card {
+    transform-style: preserve-3d;
+}
+
+.chart-card:hover {
+    transform: translateY(-5px) rotateX(1.5deg) rotateY(-1.5deg);
+}
+
+@keyframes floatIcon {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.upload-icon {
+    animation: floatIcon 2.2s ease-in-out infinite;
+}
+
+.primary-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.primary-button::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -80%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.45),
+        transparent
+    );
+    transform: skewX(-20deg);
+}
+
+.primary-button:hover::after {
+    animation: buttonShine 0.75s ease;
+}
+
+@keyframes buttonShine {
+    from {
+        left: -80%;
+    }
+
+    to {
+        left: 130%;
     }
 }
 
