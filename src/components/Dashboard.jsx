@@ -21,6 +21,7 @@ ChartJS.register(
 
 function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
     const [filters, setFilters] = useState({});
+    const [questionDisplayName, setQuestionDisplayName] = useState("");
 
     const chartColors = [
         "#004678",
@@ -32,6 +33,10 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
         "#8b5cf6",
         "#14b8a6"
     ];
+
+    const displayedQuestionName = questionDisplayName.trim()
+        ? questionDisplayName.trim()
+        : config.questionColumn;
 
     const filteredRows = useMemo(() => {
         return fileData.rows.filter((row) => {
@@ -46,6 +51,23 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
             });
         });
     }, [fileData.rows, config.filterColumns, filters]);
+
+    const activeFilters = useMemo(() => {
+        return Object.entries(filters)
+            .filter(([, value]) => value && value !== "Alle")
+            .map(([column, value]) => ({
+                column,
+                value
+            }));
+    }, [filters]);
+
+    const filteredPercent = useMemo(() => {
+        if (analysis.totalRows === 0) {
+            return 0;
+        }
+
+        return Math.round((filteredRows.length / analysis.totalRows) * 100);
+    }, [filteredRows.length, analysis.totalRows]);
 
     const answerStats = useMemo(() => {
         const counts = {};
@@ -81,6 +103,10 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
             }))
             .sort((a, b) => b.count - a.count);
     }, [filteredRows, config.questionColumn]);
+
+    const topAnswers = useMemo(() => {
+        return answerStats.slice(0, 3);
+    }, [answerStats]);
 
     const numericStats = useMemo(() => {
         const numericValues = filteredRows
@@ -128,34 +154,49 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
 
     const mostCommonAnswer = answerStats.length > 0 ? answerStats[0] : null;
 
-    const barChartData = useMemo(() => {
-        const limitedStats = answerStats.slice(0, 8);
+    const limitedBarStats = useMemo(() => {
+        return answerStats.slice(0, 8);
+    }, [answerStats]);
 
+    const limitedDoughnutStats = useMemo(() => {
+        return answerStats.slice(0, 8);
+    }, [answerStats]);
+
+    const useHorizontalBarChart = useMemo(() => {
+        const hasManyAnswers = limitedBarStats.length > 5;
+        const hasLongLabels = limitedBarStats.some((item) => item.answer.length > 18);
+
+        return hasManyAnswers || hasLongLabels;
+    }, [limitedBarStats]);
+
+    const barChartData = useMemo(() => {
         return {
-            labels: limitedStats.map((item) => item.answer),
+            labels: limitedBarStats.map((item) => item.answer),
             datasets: [
                 {
                     label: "Anzahl Antworten",
-                    data: limitedStats.map((item) => item.count),
-                    backgroundColor: "#0477bf",
-                    borderColor: "#004678",
+                    data: limitedBarStats.map((item) => item.count),
+                    backgroundColor: limitedBarStats.map((_, index) => {
+                        return index === 0 ? "#004678" : "#83b9dd";
+                    }),
+                    borderColor: limitedBarStats.map((_, index) => {
+                        return index === 0 ? "#00385f" : "#0477bf";
+                    }),
                     borderWidth: 1,
                     borderRadius: 8
                 }
             ]
         };
-    }, [answerStats]);
+    }, [limitedBarStats]);
 
     const doughnutChartData = useMemo(() => {
-        const limitedStats = answerStats.slice(0, 8);
-
         return {
-            labels: limitedStats.map((item) => item.answer),
+            labels: limitedDoughnutStats.map((item) => item.answer),
             datasets: [
                 {
                     label: "Anteil in %",
-                    data: limitedStats.map((item) => item.percent),
-                    backgroundColor: limitedStats.map(
+                    data: limitedDoughnutStats.map((item) => item.percent),
+                    backgroundColor: limitedDoughnutStats.map(
                         (_, index) => chartColors[index % chartColors.length]
                     ),
                     borderColor: "#ffffff",
@@ -163,68 +204,86 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                 }
             ]
         };
-    }, [answerStats]);
+    }, [limitedDoughnutStats]);
 
-    const barChartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: false
-            },
-            tooltip: {
-                callbacks: {
-                    label: (context) => {
-                        return `${context.raw} Antworten`;
-                    }
-                }
-            }
-        },
-        scales: {
-            x: {
-                ticks: {
-                    color: "#64748b",
-                    maxRotation: 35,
-                    minRotation: 0
-                },
-                grid: {
+    const barChartOptions = useMemo(() => {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: useHorizontalBarChart ? "y" : "x",
+            plugins: {
+                legend: {
                     display: false
-                }
-            },
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    color: "#64748b"
                 },
-                grid: {
-                    color: "#e6eef5"
-                }
-            }
-        }
-    };
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const item = limitedBarStats[context.dataIndex];
 
-    const doughnutChartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: "62%",
-        plugins: {
-            legend: {
-                position: "bottom",
-                labels: {
-                    color: "#334155",
-                    boxWidth: 14,
-                    padding: 16
+                            if (!item) {
+                                return `${context.raw} Antworten`;
+                            }
+
+                            return `${item.answer}: ${item.count} Antworten (${item.percent}%)`;
+                        }
+                    }
                 }
             },
-            tooltip: {
-                callbacks: {
-                    label: (context) => {
-                        return `${context.label}: ${context.raw}%`;
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: "#64748b",
+                        maxRotation: useHorizontalBarChart ? 0 : 35,
+                        minRotation: 0
+                    },
+                    grid: {
+                        color: useHorizontalBarChart ? "#e6eef5" : "transparent"
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: "#64748b"
+                    },
+                    grid: {
+                        color: useHorizontalBarChart ? "transparent" : "#e6eef5"
                     }
                 }
             }
-        }
-    };
+        };
+    }, [useHorizontalBarChart, limitedBarStats]);
+
+    const doughnutChartOptions = useMemo(() => {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "62%",
+            plugins: {
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        color: "#334155",
+                        boxWidth: 14,
+                        padding: 16
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const item = limitedDoughnutStats[context.dataIndex];
+
+                            if (!item) {
+                                return `${context.label}: ${context.raw}%`;
+                            }
+
+                            return `${item.answer}: ${item.count} Antworten (${item.percent}%)`;
+                        }
+                    }
+                }
+            }
+        };
+    }, [limitedDoughnutStats]);
 
     function getUniqueValues(column) {
         const values = fileData.rows
@@ -294,7 +353,10 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
 
                 <div className="summary-card">
                     <span>Gefilterte Datensätze</span>
-                    <strong>{filteredRows.length}</strong>
+                    <strong>
+                        {filteredRows.length} von {analysis.totalRows}
+                    </strong>
+                    <small>{filteredPercent}% der Daten</small>
                 </div>
 
                 <div className="summary-card">
@@ -309,6 +371,45 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                             ? formatNumber(numericStats.average)
                             : "Nicht verfügbar"}
                     </strong>
+                </div>
+            </div>
+
+            <div className="dashboard-info-grid">
+                <div className="content-card compact-card">
+                    <h2>Aktive Filter</h2>
+
+                    {activeFilters.length === 0 ? (
+                        <p className="muted-text">Keine Filter aktiv</p>
+                    ) : (
+                        <div className="active-filter-list">
+                            {activeFilters.map((filter) => (
+                                <div
+                                    className="active-filter-item"
+                                    key={`${filter.column}-${filter.value}`}
+                                >
+                                    <strong>{filter.column}</strong>
+                                    <span>{filter.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="content-card compact-card">
+                    <h2>Top Antworten</h2>
+
+                    {topAnswers.length === 0 ? (
+                        <p className="muted-text">Keine gültigen Antworten vorhanden.</p>
+                    ) : (
+                        <ol className="top-answer-list">
+                            {topAnswers.map((item) => (
+                                <li key={item.answer}>
+                                    <span>{item.answer}</span>
+                                    <strong>{item.percent}%</strong>
+                                </li>
+                            ))}
+                        </ol>
+                    )}
                 </div>
             </div>
 
@@ -351,40 +452,35 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
 
             <div className="content-card">
                 <h2>Ausgewertete Spalte</h2>
+
                 <p className="muted-text">
                     Aktuell wird die Spalte <strong>{config.questionColumn}</strong> ausgewertet.
                 </p>
 
-                {numericStats.isNumeric && (
-                    <div className="mini-stats-grid">
-                        <div className="mini-stat-card">
-                            <span>Numerische Werte</span>
-                            <strong>{numericStats.numericCount}</strong>
-                        </div>
+                <div className="display-name-field">
+                    <label>
+                        Anzeigename für diese Spalte
+                        <input
+                            type="text"
+                            placeholder="Optionaler Anzeigename, z. B. Zufriedenheit"
+                            value={questionDisplayName}
+                            onChange={(event) => setQuestionDisplayName(event.target.value)}
+                        />
+                    </label>
+                </div>
 
-                        <div className="mini-stat-card">
-                            <span>Median</span>
-                            <strong>{formatNumber(numericStats.median)}</strong>
-                        </div>
-
-                        <div className="mini-stat-card">
-                            <span>Tiefster Wert</span>
-                            <strong>{formatNumber(numericStats.min)}</strong>
-                        </div>
-
-                        <div className="mini-stat-card">
-                            <span>Höchster Wert</span>
-                            <strong>{formatNumber(numericStats.max)}</strong>
-                        </div>
-                    </div>
-                )}
+                <p className="muted-text">
+                    Angezeigt als: <strong>{displayedQuestionName}</strong>
+                </p>
             </div>
 
             <div className="dashboard-grid">
                 <div className="content-card chart-card">
-                    <h2>Balkendiagramm</h2>
+                    <h2>Antwortverteilung: {displayedQuestionName}</h2>
                     <p className="muted-text">
-                        Antwortverteilung der ausgewählten Spalte.
+                        {useHorizontalBarChart
+                            ? "Viele oder lange Antwortwerte werden horizontal dargestellt."
+                            : "Antwortverteilung der ausgewählten Spalte."}
                     </p>
 
                     {answerStats.length === 0 ? (
@@ -397,20 +493,58 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                 </div>
 
                 <div className="content-card chart-card">
-                    <h2>Doughnut-Diagramm</h2>
-                    <p className="muted-text">
-                        Prozentuale Verteilung der häufigsten Antworten.
-                    </p>
+                    {numericStats.isNumeric ? (
+                        <>
+                            <h2>Werteübersicht: {displayedQuestionName}</h2>
+                            <p className="muted-text">
+                                Für numerische Spalten wird statt eines Doughnut-Diagramms eine Werteübersicht angezeigt.
+                            </p>
 
-                    {answerStats.length === 0 ? (
-                        <p>Keine gültigen Werte für das Diagramm vorhanden.</p>
+                            <div className="numeric-overview-grid">
+                                <div className="numeric-overview-card">
+                                    <span>Durchschnitt</span>
+                                    <strong>{formatNumber(numericStats.average)}</strong>
+                                </div>
+
+                                <div className="numeric-overview-card">
+                                    <span>Median</span>
+                                    <strong>{formatNumber(numericStats.median)}</strong>
+                                </div>
+
+                                <div className="numeric-overview-card">
+                                    <span>Tiefster Wert</span>
+                                    <strong>{formatNumber(numericStats.min)}</strong>
+                                </div>
+
+                                <div className="numeric-overview-card">
+                                    <span>Höchster Wert</span>
+                                    <strong>{formatNumber(numericStats.max)}</strong>
+                                </div>
+
+                                <div className="numeric-overview-card full-width-card">
+                                    <span>Numerische Werte</span>
+                                    <strong>{numericStats.numericCount}</strong>
+                                </div>
+                            </div>
+                        </>
                     ) : (
-                        <div className="chart-wrapper doughnut-wrapper">
-                            <Doughnut
-                                data={doughnutChartData}
-                                options={doughnutChartOptions}
-                            />
-                        </div>
+                        <>
+                            <h2>Prozentuale Verteilung: {displayedQuestionName}</h2>
+                            <p className="muted-text">
+                                Prozentuale Verteilung der häufigsten Antworten.
+                            </p>
+
+                            {answerStats.length === 0 ? (
+                                <p>Keine gültigen Werte für das Diagramm vorhanden.</p>
+                            ) : (
+                                <div className="chart-wrapper doughnut-wrapper">
+                                    <Doughnut
+                                        data={doughnutChartData}
+                                        options={doughnutChartOptions}
+                                    />
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
@@ -421,14 +555,39 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                 <div className="insight-list">
                     <div className="insight-item">
                         💡 Es wurden aktuell <strong>{filteredRows.length}</strong>{" "}
-                        Datensätze ausgewertet.
+                        von <strong>{analysis.totalRows}</strong> Datensätzen ausgewertet.
                     </div>
+
+                    <div className="insight-item">
+                        💡 Der aktuelle Filter umfasst <strong>{filteredPercent}%</strong>{" "}
+                        aller Datensätze.
+                    </div>
+
+                    {activeFilters.length === 0 ? (
+                        <div className="insight-item">
+                            💡 Es sind keine Filter aktiv. Die Auswertung basiert auf allen importierten Daten.
+                        </div>
+                    ) : (
+                        <div className="insight-item">
+                            💡 Es sind <strong>{activeFilters.length}</strong> Filter aktiv.
+                        </div>
+                    )}
 
                     {mostCommonAnswer && (
                         <div className="insight-item">
-                            💡 Die häufigste Antwort ist{" "}
+                            💡 Die häufigste Antwort bei <strong>{displayedQuestionName}</strong> ist{" "}
                             <strong>{mostCommonAnswer.answer}</strong> mit{" "}
                             <strong>{mostCommonAnswer.percent}%</strong>.
+                        </div>
+                    )}
+
+                    {topAnswers.length > 1 && (
+                        <div className="insight-item">
+                            💡 Die Top-{topAnswers.length} Antworten machen zusammen{" "}
+                            <strong>
+                                {topAnswers.reduce((total, item) => total + item.percent, 0)}%
+                            </strong>{" "}
+                            der gültigen Antworten aus.
                         </div>
                     )}
 
