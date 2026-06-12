@@ -8,14 +8,51 @@ function DataConfig({ fileData, analysis, onStartDashboard, onReset }) {
     const suggestedGender = findColumn(columns, ["geschlecht", "gender", "sex", "s01"]);
     const suggestedLanguage = findColumn(columns, ["sprache", "language", "lang"]);
 
+    const suggestedFilterColumns = useMemo(() => {
+        return [
+            suggestedRegion,
+            suggestedAge,
+            suggestedGender,
+            suggestedLanguage
+        ].filter(Boolean);
+    }, [suggestedRegion, suggestedAge, suggestedGender, suggestedLanguage]);
+
     const [selectedQuestionColumn, setSelectedQuestionColumn] = useState("");
-    const [selectedFilterColumns, setSelectedFilterColumns] = useState(
-        [suggestedRegion, suggestedAge, suggestedGender, suggestedLanguage].filter(Boolean)
-    );
+    const [selectedFilterColumns, setSelectedFilterColumns] = useState(suggestedFilterColumns);
+    const [questionSearchTerm, setQuestionSearchTerm] = useState("");
+    const [filterSearchTerm, setFilterSearchTerm] = useState("");
 
     const previewColumns = useMemo(() => {
         return columns.slice(0, 10);
     }, [columns]);
+
+    const filteredQuestionColumns = useMemo(() => {
+        if (!questionSearchTerm.trim()) {
+            return columns;
+        }
+
+        const normalizedSearch = questionSearchTerm.toLowerCase();
+
+        return columns.filter((column) => {
+            return column.toLowerCase().includes(normalizedSearch);
+        });
+    }, [columns, questionSearchTerm]);
+
+    const filteredOtherFilterColumns = useMemo(() => {
+        const otherColumns = columns.filter((column) => {
+            return !suggestedFilterColumns.includes(column);
+        });
+
+        if (!filterSearchTerm.trim()) {
+            return otherColumns;
+        }
+
+        const normalizedSearch = filterSearchTerm.toLowerCase();
+
+        return otherColumns.filter((column) => {
+            return column.toLowerCase().includes(normalizedSearch);
+        });
+    }, [columns, suggestedFilterColumns, filterSearchTerm]);
 
     function toggleFilterColumn(column) {
         setSelectedFilterColumns((currentColumns) => {
@@ -89,15 +126,30 @@ function DataConfig({ fileData, analysis, onStartDashboard, onReset }) {
             </div>
 
             {fileData.warnings && fileData.warnings.length > 0 && (
-    <div className="warning-box">
-        {fileData.warnings.map((warning, index) => (
-            <p key={index}>{warning}</p>
-        ))}
-    </div>
-)}
+                <div className="warning-box">
+                    {fileData.warnings.map((warning, index) => (
+                        <p key={index}>{warning}</p>
+                    ))}
+                </div>
+            )}
 
             <div className="content-card">
                 <h2>Hauptauswertung</h2>
+                <p className="muted-text">
+                    Wähle die Spalte aus, die im Dashboard ausgewertet und visualisiert werden soll.
+                </p>
+
+                <div className="column-search-box">
+                    <label>
+                        Spalte suchen
+                        <input
+                            type="text"
+                            placeholder="z. B. Q01, Zufriedenheit, Bewertung..."
+                            value={questionSearchTerm}
+                            onChange={(event) => setQuestionSearchTerm(event.target.value)}
+                        />
+                    </label>
+                </div>
 
                 <div className="form-grid">
                     <label>
@@ -108,7 +160,7 @@ function DataConfig({ fileData, analysis, onStartDashboard, onReset }) {
                         >
                             <option value="">Spalte auswählen</option>
 
-                            {columns.map((column) => (
+                            {filteredQuestionColumns.map((column) => (
                                 <option key={column} value={column}>
                                     {column}
                                 </option>
@@ -116,6 +168,10 @@ function DataConfig({ fileData, analysis, onStartDashboard, onReset }) {
                         </select>
                     </label>
                 </div>
+
+                <p className="column-result-info">
+                    {filteredQuestionColumns.length} von {columns.length} Spalten gefunden
+                </p>
             </div>
 
             <div className="content-card">
@@ -124,18 +180,77 @@ function DataConfig({ fileData, analysis, onStartDashboard, onReset }) {
                     Wähle die Spalten aus, die später als Filter im Dashboard angezeigt werden sollen.
                 </p>
 
-                <div className="checkbox-grid">
-                    {columns.map((column) => (
-                        <label key={column} className="checkbox-item">
-                            <input
-                                type="checkbox"
-                                checked={selectedFilterColumns.includes(column)}
-                                onChange={() => toggleFilterColumn(column)}
-                            />
-                            <span>{column}</span>
-                        </label>
-                    ))}
+                <div className="suggested-columns-section">
+                    <h3>Vorgeschlagene Filterspalten</h3>
+
+                    {suggestedFilterColumns.length === 0 ? (
+                        <p className="muted-text">
+                            Es wurden keine typischen Filterspalten automatisch erkannt.
+                        </p>
+                    ) : (
+                        <div className="suggested-filter-grid">
+                            {suggestedFilterColumns.map((column) => (
+                                <label key={column} className="checkbox-item suggested-checkbox-item">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedFilterColumns.includes(column)}
+                                        onChange={() => toggleFilterColumn(column)}
+                                    />
+                                    <span>{column}</span>
+                                </label>
+                            ))}
+                        </div>
+                    )}
                 </div>
+
+                <div className="other-columns-section">
+                    <h3>Weitere Spalten</h3>
+
+                    <div className="column-search-box">
+                        <label>
+                            Filterspalte suchen
+                            <input
+                                type="text"
+                                placeholder="Spaltenname eingeben..."
+                                value={filterSearchTerm}
+                                onChange={(event) => setFilterSearchTerm(event.target.value)}
+                            />
+                        </label>
+                    </div>
+
+                    <div className="checkbox-grid">
+                        {filteredOtherFilterColumns.map((column) => (
+                            <label key={column} className="checkbox-item">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedFilterColumns.includes(column)}
+                                    onChange={() => toggleFilterColumn(column)}
+                                />
+                                <span>{column}</span>
+                            </label>
+                        ))}
+                    </div>
+
+                    <p className="column-result-info">
+                        {filteredOtherFilterColumns.length} weitere Spalten angezeigt
+                    </p>
+                </div>
+            </div>
+
+            <div className="content-card">
+                <h2>Ausgewählte Filter</h2>
+
+                {selectedFilterColumns.length === 0 ? (
+                    <p className="muted-text">
+                        Es wurden noch keine Filterspalten ausgewählt.
+                    </p>
+                ) : (
+                    <div className="selected-column-list">
+                        {selectedFilterColumns.map((column) => (
+                            <span key={column}>{column}</span>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="content-card">
