@@ -1361,3 +1361,67 @@ tr:hover td {
         grid-template-columns: 1fr;
     }
 }
+
+.multi-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.multi-filter-group {
+    padding: 16px;
+    border-radius: 18px;
+    background: #f7fbff;
+    border: 1px solid #d8e5ef;
+}
+
+.multi-filter-group h3 {
+    margin: 0 0 12px;
+    color: #05395f;
+    font-size: 16px;
+}
+
+.multi-filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 220px;
+    overflow: auto;
+    padding-right: 6px;
+}
+
+.multi-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #e6eef5;
+    color: #334155;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.multi-filter-option:hover {
+    background: #e9f5ff;
+    border-color: #83b9dd;
+}
+
+.multi-filter-option input {
+    width: 16px;
+    height: 16px;
+}
+
+.multi-filter-option span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .multi-filter-grid {
+        grid-template-columns: 1fr;
+    }
+}
