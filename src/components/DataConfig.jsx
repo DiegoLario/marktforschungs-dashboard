@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 
-function DataConfig({ fileData, analysis, onStartDashboard, onReset }) {
+function DataConfig({ fileData, analysis, initialConfig, onStartDashboard, onReset }) {
     const columns = fileData.columns;
 
     const suggestedRegion = findColumn(columns, ["region", "regionen", "gebiet", "sprachregion"]);
@@ -17,8 +17,14 @@ function DataConfig({ fileData, analysis, onStartDashboard, onReset }) {
         ].filter(Boolean);
     }, [suggestedRegion, suggestedAge, suggestedGender, suggestedLanguage]);
 
-    const [selectedQuestionColumn, setSelectedQuestionColumn] = useState("");
-    const [selectedFilterColumns, setSelectedFilterColumns] = useState(suggestedFilterColumns);
+    const [selectedQuestionColumn, setSelectedQuestionColumn] = useState(
+        initialConfig?.questionColumn || ""
+    );
+
+    const [selectedFilterColumns, setSelectedFilterColumns] = useState(
+        initialConfig?.filterColumns || suggestedFilterColumns
+    );
+
     const [questionSearchTerm, setQuestionSearchTerm] = useState("");
     const [filterSearchTerm, setFilterSearchTerm] = useState("");
 
@@ -124,6 +130,12 @@ function DataConfig({ fileData, analysis, onStartDashboard, onReset }) {
                     <strong>{analysis.totalColumns}</strong>
                 </div>
             </div>
+
+            {initialConfig && (
+                <div className="info-box">
+                    Deine vorherige Auswahl wurde übernommen. Du kannst die Frage- oder Filterspalten hier anpassen und danach das Dashboard erneut starten.
+                </div>
+            )}
 
             {fileData.warnings && fileData.warnings.length > 0 && (
                 <div className="warning-box">
@@ -265,7 +277,7 @@ function DataConfig({ fileData, analysis, onStartDashboard, onReset }) {
 
             <div className="button-row">
                 <button className="secondary-button" onClick={onReset}>
-                    Zurück
+                    Neue Datei hochladen
                 </button>
 
                 <button className="primary-button real-button" onClick={handleStartDashboard}>
