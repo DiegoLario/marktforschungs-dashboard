@@ -58,6 +58,7 @@ function App() {
             <DataConfig
                 fileData={fileData}
                 analysis={analysis}
+                initialConfig={config}
                 onStartDashboard={handleStartDashboard}
                 onReset={handleReset}
             />
