@@ -43,13 +43,17 @@ function App() {
         setCurrentPage("dashboard");
     }
 
+    function handleBackToConfig() {
+        setCurrentPage("config");
+    }
+
     if (!fileData || currentPage === "upload") {
         return (
             <FileUpload onFileLoaded={handleFileLoaded} />
         );
     }
 
-    if (fileData && !config && currentPage === "config") {
+    if (fileData && currentPage === "config") {
         return (
             <DataConfig
                 fileData={fileData}
@@ -78,6 +82,7 @@ function App() {
             config={config}
             onReset={handleReset}
             onOpenTable={handleOpenTable}
+            onBackToConfig={handleBackToConfig}
         />
     );
 }
