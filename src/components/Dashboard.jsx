@@ -19,7 +19,7 @@ ChartJS.register(
     Legend
 );
 
-function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
+function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToConfig }) {
     const [filters, setFilters] = useState({});
     const [questionDisplayName, setQuestionDisplayName] = useState("");
 
@@ -41,24 +41,26 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
     const filteredRows = useMemo(() => {
         return fileData.rows.filter((row) => {
             return config.filterColumns.every((column) => {
-                const selectedValue = filters[column];
+                const selectedValues = filters[column] || [];
 
-                if (!selectedValue || selectedValue === "Alle") {
+                if (selectedValues.length === 0) {
                     return true;
                 }
 
-                return row[column] === selectedValue;
+                return selectedValues.includes(row[column]);
             });
         });
     }, [fileData.rows, config.filterColumns, filters]);
 
     const activeFilters = useMemo(() => {
         return Object.entries(filters)
-            .filter(([, value]) => value && value !== "Alle")
-            .map(([column, value]) => ({
-                column,
-                value
-            }));
+            .filter(([, values]) => Array.isArray(values) && values.length > 0)
+            .flatMap(([column, values]) => {
+                return values.map((value) => ({
+                    column,
+                    value
+                }));
+            });
     }, [filters]);
 
     const filteredPercent = useMemo(() => {
@@ -113,34 +115,8 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
             .map((row) => convertToNumber(row[config.questionColumn]))
             .filter((value) => value !== null);
 
-        if (numericValues.length === 0) {
-            return {
-                isNumeric: false,
-                average: null,
-                median: null,
-                min: null,
-                max: null,
-                numericCount: 0
-            };
-        }
-
-        const sum = numericValues.reduce((total, value) => total + value, 0);
-        const average = sum / numericValues.length;
-
-        const sortedValues = [...numericValues].sort((a, b) => a - b);
-        const middleIndex = Math.floor(sortedValues.length / 2);
-
-        const median =
-            sortedValues.length % 2 === 0
-                ? (sortedValues[middleIndex - 1] + sortedValues[middleIndex]) / 2
-                : sortedValues[middleIndex];
-
         return {
-            isNumeric: true,
-            average,
-            median,
-            min: sortedValues[0],
-            max: sortedValues[sortedValues.length - 1],
+            isNumeric: numericValues.length > 0,
             numericCount: numericValues.length
         };
     }, [filteredRows, config.questionColumn]);
@@ -152,6 +128,7 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
         }).length;
     }, [filteredRows, config.questionColumn]);
 
+    const validAnswers = Math.max(filteredRows.length - missingAnswers, 0);
     const mostCommonAnswer = answerStats.length > 0 ? answerStats[0] : null;
 
     const limitedBarStats = useMemo(() => {
@@ -294,25 +271,25 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
     }
 
     function handleFilterChange(column, value) {
-        setFilters((currentFilters) => ({
-            ...currentFilters,
-            [column]: value
-        }));
+        setFilters((currentFilters) => {
+            const currentValues = currentFilters[column] || [];
+
+            if (currentValues.includes(value)) {
+                return {
+                    ...currentFilters,
+                    [column]: currentValues.filter((item) => item !== value)
+                };
+            }
+
+            return {
+                ...currentFilters,
+                [column]: [...currentValues, value]
+            };
+        });
     }
 
     function resetFilters() {
         setFilters({});
-    }
-
-    function formatNumber(value) {
-        if (value === null || value === undefined || Number.isNaN(value)) {
-            return "Nicht verfügbar";
-        }
-
-        return new Intl.NumberFormat("de-CH", {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-        }).format(value);
     }
 
     return (
@@ -339,6 +316,10 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                         Datentabelle anzeigen
                     </button>
 
+                    <button className="secondary-button" onClick={onBackToConfig}>
+                        Zurück zu Daten konfigurieren
+                    </button>
+
                     <button className="secondary-button" onClick={onReset}>
                         Neue Datei hochladen
                     </button>
@@ -360,17 +341,13 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                 </div>
 
                 <div className="summary-card">
-                    <span className="orange">Leere Werte</span>
+                    <span className="orange">Missings</span>
                     <strong className="orange">{missingAnswers}</strong>
                 </div>
 
                 <div className="summary-card">
-                    <span>Durchschnitt</span>
-                    <strong>
-                        {numericStats.isNumeric
-                            ? formatNumber(numericStats.average)
-                            : "Nicht verfügbar"}
-                    </strong>
+                    <span>Gültige Werte</span>
+                    <strong>{validAnswers}</strong>
                 </div>
             </div>
 
@@ -419,6 +396,7 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                         <h2>Filter</h2>
                         <p className="muted-text">
                             Die Filter basieren auf den Spalten, die in der Konfiguration ausgewählt wurden.
+                            Es können pro Filter mehrere Werte ausgewählt werden.
                         </p>
                     </div>
 
@@ -427,26 +405,34 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                     </button>
                 </div>
 
-                <div className="filter-grid">
-                    {config.filterColumns.map((column) => (
-                        <label key={column}>
-                            {column}
-                            <select
-                                value={filters[column] || "Alle"}
-                                onChange={(event) =>
-                                    handleFilterChange(column, event.target.value)
-                                }
-                            >
-                                <option value="Alle">Alle</option>
+                <div className="multi-filter-grid">
+                    {config.filterColumns.map((column) => {
+                        const values = getUniqueValues(column);
+                        const selectedValues = filters[column] || [];
 
-                                {getUniqueValues(column).map((value) => (
-                                    <option key={value} value={value}>
-                                        {value}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                    ))}
+                        return (
+                            <div className="multi-filter-group" key={column}>
+                                <h3>{column}</h3>
+
+                                {values.length === 0 ? (
+                                    <p className="muted-text">Keine Werte vorhanden.</p>
+                                ) : (
+                                    <div className="multi-filter-options">
+                                        {values.map((value) => (
+                                            <label key={value} className="multi-filter-option">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedValues.includes(value)}
+                                                    onChange={() => handleFilterChange(column, value)}
+                                                />
+                                                <span>{value}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -474,6 +460,15 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                 </p>
             </div>
 
+            {!numericStats.isNumeric && (
+                <div className="warning-box">
+                    <p>
+                        Hinweis: In der ausgewählten Spalte wurden keine numerischen Werte erkannt.
+                        Es wird deshalb keine Durchschnittsberechnung angezeigt. Die Grafiken zeigen die Verteilung der gültigen Antworten.
+                    </p>
+                </div>
+            )}
+
             <div className="dashboard-grid">
                 <div className="content-card chart-card">
                     <h2>Antwortverteilung: {displayedQuestionName}</h2>
@@ -493,58 +488,20 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                 </div>
 
                 <div className="content-card chart-card">
-                    {numericStats.isNumeric ? (
-                        <>
-                            <h2>Werteübersicht: {displayedQuestionName}</h2>
-                            <p className="muted-text">
-                                Für numerische Spalten wird statt eines Doughnut-Diagramms eine Werteübersicht angezeigt.
-                            </p>
+                    <h2>Prozentuale Verteilung: {displayedQuestionName}</h2>
+                    <p className="muted-text">
+                        Prozentuale Verteilung der häufigsten Antworten.
+                    </p>
 
-                            <div className="numeric-overview-grid">
-                                <div className="numeric-overview-card">
-                                    <span>Durchschnitt</span>
-                                    <strong>{formatNumber(numericStats.average)}</strong>
-                                </div>
-
-                                <div className="numeric-overview-card">
-                                    <span>Median</span>
-                                    <strong>{formatNumber(numericStats.median)}</strong>
-                                </div>
-
-                                <div className="numeric-overview-card">
-                                    <span>Tiefster Wert</span>
-                                    <strong>{formatNumber(numericStats.min)}</strong>
-                                </div>
-
-                                <div className="numeric-overview-card">
-                                    <span>Höchster Wert</span>
-                                    <strong>{formatNumber(numericStats.max)}</strong>
-                                </div>
-
-                                <div className="numeric-overview-card full-width-card">
-                                    <span>Numerische Werte</span>
-                                    <strong>{numericStats.numericCount}</strong>
-                                </div>
-                            </div>
-                        </>
+                    {answerStats.length === 0 ? (
+                        <p>Keine gültigen Werte für das Diagramm vorhanden.</p>
                     ) : (
-                        <>
-                            <h2>Prozentuale Verteilung: {displayedQuestionName}</h2>
-                            <p className="muted-text">
-                                Prozentuale Verteilung der häufigsten Antworten.
-                            </p>
-
-                            {answerStats.length === 0 ? (
-                                <p>Keine gültigen Werte für das Diagramm vorhanden.</p>
-                            ) : (
-                                <div className="chart-wrapper doughnut-wrapper">
-                                    <Doughnut
-                                        data={doughnutChartData}
-                                        options={doughnutChartOptions}
-                                    />
-                                </div>
-                            )}
-                        </>
+                        <div className="chart-wrapper doughnut-wrapper">
+                            <Doughnut
+                                data={doughnutChartData}
+                                options={doughnutChartOptions}
+                            />
+                        </div>
                     )}
                 </div>
             </div>
@@ -569,7 +526,7 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
                         </div>
                     ) : (
                         <div className="insight-item">
-                            💡 Es sind <strong>{activeFilters.length}</strong> Filter aktiv.
+                            💡 Es sind <strong>{activeFilters.length}</strong> Filterwerte aktiv.
                         </div>
                     )}
 
@@ -593,20 +550,8 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable }) {
 
                     <div className="insight-item">
                         💡 Bei der ausgewählten Spalte wurden{" "}
-                        <strong>{missingAnswers}</strong> leere Werte gefunden.
+                        <strong>{missingAnswers}</strong> Missings gefunden.
                     </div>
-
-                    {numericStats.isNumeric ? (
-                        <div className="insight-item">
-                            💡 Der Durchschnitt der ausgewählten Spalte liegt bei{" "}
-                            <strong>{formatNumber(numericStats.average)}</strong>.
-                        </div>
-                    ) : (
-                        <div className="insight-item">
-                            💡 Für diese Spalte wurde kein Durchschnitt berechnet,
-                            da sie keine rein numerischen Werte enthält.
-                        </div>
-                    )}
                 </div>
             </div>
         </section>
