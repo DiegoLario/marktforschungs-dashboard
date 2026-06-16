@@ -212,6 +212,7 @@ button {
 .error-box,
 .notice-box {
     margin-top: 18px;
+    margin-bottom: 18px;
     padding: 15px 18px;
     border-radius: 16px;
     line-height: 1.5;
@@ -1022,8 +1023,6 @@ tr:hover td {
     }
 }
 
-/* Weiches Erscheinen */
-
 .upload-card,
 .content-card,
 .summary-card,
@@ -1031,8 +1030,6 @@ tr:hover td {
 .excel-table-wrapper {
     animation: fadeSlideUp 0.45s ease both;
 }
-
-/* Kleine Verzögerung bei mehreren Karten */
 
 .summary-grid .summary-card:nth-child(1) {
     animation-delay: 0.05s;
@@ -1049,8 +1046,6 @@ tr:hover td {
 .summary-grid .summary-card:nth-child(4) {
     animation-delay: 0.2s;
 }
-
-/* Hover auf Karten */
 
 .summary-card,
 .content-card,
@@ -1070,8 +1065,6 @@ tr:hover td {
     box-shadow: 0 22px 52px rgba(0, 70, 120, 0.16);
     border-color: rgba(4, 119, 191, 0.22);
 }
-
-/* Buttons lebendiger machen */
 
 .primary-button,
 .secondary-button,
@@ -1095,8 +1088,6 @@ tr:hover td {
     box-shadow: 0 14px 28px rgba(0, 70, 120, 0.26);
 }
 
-/* Dropzone Animation */
-
 .drop-zone {
     transition:
         transform 0.2s ease,
@@ -1112,8 +1103,6 @@ tr:hover td {
 .drop-zone-active {
     animation: softPulse 1.2s infinite;
 }
-
-/* Progressbar Shine */
 
 .progressbar-fill {
     position: relative;
@@ -1136,8 +1125,6 @@ tr:hover td {
     animation: progressShine 1.4s infinite;
 }
 
-/* Tabellen-Hover */
-
 .excel-table tr {
     transition: background 0.15s ease;
 }
@@ -1149,8 +1136,6 @@ tr:hover td {
 .excel-table tr:hover td {
     background: #eef7ff;
 }
-
-/* Sortierbutton Feedback */
 
 .table-sort-button {
     transition: color 0.15s ease;
@@ -1422,6 +1407,256 @@ tr:hover td {
 
 @media (max-width: 900px) {
     .multi-filter-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.multi-filter-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.multi-filter-header h3 {
+    margin-bottom: 4px;
+}
+
+.multi-filter-header small {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.multi-filter-header .small-button {
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .multi-filter-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+
+.multi-filter-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 12px;
+}
+
+.multi-filter-grid-compact .multi-filter-group {
+    padding: 12px;
+    border-radius: 16px;
+}
+
+.multi-filter-grid-compact .multi-filter-header {
+    margin-bottom: 8px;
+}
+
+.multi-filter-grid-compact .multi-filter-header h3 {
+    font-size: 15px;
+    margin-bottom: 2px;
+}
+
+.multi-filter-grid-compact .multi-filter-header small {
+    font-size: 12px;
+}
+
+.multi-filter-grid-compact .multi-filter-header .small-button {
+    padding: 7px 10px;
+    font-size: 13px;
+}
+
+.multi-filter-grid-compact .multi-filter-options {
+    gap: 6px;
+    max-height: 165px;
+}
+
+.multi-filter-grid-compact .multi-filter-option {
+    padding: 6px 8px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.multi-filter-grid-compact .multi-filter-option input {
+    width: 14px;
+    height: 14px;
+}
+
+.active-filter-summary-item {
+    align-items: flex-start;
+    min-width: 220px;
+    max-width: 320px;
+    border-radius: 18px;
+}
+
+.active-filter-summary-item div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.active-filter-summary-item small {
+    display: block;
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.active-filter-summary-item span {
+    color: #0477bf;
+}
+
+/* Kompaktere Multi-Filter */
+
+.multi-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.multi-filter-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+    gap: 10px;
+}
+
+.multi-filter-group {
+    padding: 12px;
+    border-radius: 16px;
+    background: #f7fbff;
+    border: 1px solid #d8e5ef;
+    min-width: 0;
+}
+
+.multi-filter-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 9px;
+}
+
+.multi-filter-title {
+    min-width: 0;
+}
+
+.multi-filter-title h3 {
+    margin: 0 0 2px;
+    color: #05395f;
+    font-size: 15px;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.multi-filter-title small {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.multi-filter-select-all {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 999px;
+    background: #e9f5ff;
+    color: #05395f;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.multi-filter-select-all:hover {
+    transform: translateY(-1px);
+    background: #d8ecfb;
+    box-shadow: 0 8px 18px rgba(0, 70, 120, 0.12);
+}
+
+.multi-filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 156px;
+    overflow: auto;
+    padding-right: 4px;
+}
+
+.multi-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 6px 9px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #e1ebf3;
+    color: #334155;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.multi-filter-option:hover {
+    background: #e9f5ff;
+    border-color: #83b9dd;
+}
+
+.multi-filter-option input {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+}
+
+.multi-filter-option span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.multi-filter-options::-webkit-scrollbar {
+    width: 6px;
+}
+
+.multi-filter-options::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.multi-filter-options::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #b8c9d8;
+}
+
+.multi-filter-options::-webkit-scrollbar-thumb:hover {
+    background: #83a4bd;
+}
+
+@media (max-width: 900px) {
+    .multi-filter-grid,
+    .multi-filter-grid-compact {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .multi-filter-grid,
+    .multi-filter-grid-compact {
         grid-template-columns: 1fr;
     }
 }
