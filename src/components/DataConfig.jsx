@@ -21,6 +21,10 @@ function DataConfig({ fileData, analysis, initialConfig, onStartDashboard, onRes
         initialConfig?.questionColumn || ""
     );
 
+    const [selectedSecondQuestionColumn, setSelectedSecondQuestionColumn] = useState(
+        initialConfig?.secondQuestionColumn || ""
+    );
+
     const [selectedFilterColumns, setSelectedFilterColumns] = useState(
         initialConfig?.filterColumns || suggestedFilterColumns
     );
@@ -78,6 +82,7 @@ function DataConfig({ fileData, analysis, initialConfig, onStartDashboard, onRes
 
         onStartDashboard({
             questionColumn: selectedQuestionColumn,
+            secondQuestionColumn: selectedSecondQuestionColumn,
             filterColumns: selectedFilterColumns
         });
     }
@@ -133,7 +138,7 @@ function DataConfig({ fileData, analysis, initialConfig, onStartDashboard, onRes
 
             {initialConfig && (
                 <div className="info-box">
-                    Deine vorherige Auswahl wurde übernommen. Du kannst die Frage- oder Filterspalten hier anpassen und danach das Dashboard erneut starten.
+                    Deine vorherige Auswahl wurde übernommen. Du kannst die Spalten oder Filter hier anpassen und danach das Dashboard erneut starten.
                 </div>
             )}
 
@@ -148,7 +153,8 @@ function DataConfig({ fileData, analysis, initialConfig, onStartDashboard, onRes
             <div className="content-card">
                 <h2>Hauptauswertung</h2>
                 <p className="muted-text">
-                    Wähle die Spalte aus, die im Dashboard ausgewertet und visualisiert werden soll.
+                    Wähle die Spalten aus, die im Dashboard visualisiert werden sollen.
+                    Die erste Spalte ist Pflicht, die zweite Spalte ist optional.
                 </p>
 
                 <div className="column-search-box">
@@ -165,12 +171,28 @@ function DataConfig({ fileData, analysis, initialConfig, onStartDashboard, onRes
 
                 <div className="form-grid">
                     <label>
-                        Frage / Antwortspalte
+                        Grafik 1 / Hauptspalte
                         <select
                             value={selectedQuestionColumn}
                             onChange={(event) => setSelectedQuestionColumn(event.target.value)}
                         >
                             <option value="">Spalte auswählen</option>
+
+                            {filteredQuestionColumns.map((column) => (
+                                <option key={column} value={column}>
+                                    {column}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+
+                    <label>
+                        Grafik 2 / optionale Vergleichsspalte
+                        <select
+                            value={selectedSecondQuestionColumn}
+                            onChange={(event) => setSelectedSecondQuestionColumn(event.target.value)}
+                        >
+                            <option value="">Keine zweite Spalte</option>
 
                             {filteredQuestionColumns.map((column) => (
                                 <option key={column} value={column}>
@@ -246,6 +268,24 @@ function DataConfig({ fileData, analysis, initialConfig, onStartDashboard, onRes
                     <p className="column-result-info">
                         {filteredOtherFilterColumns.length} weitere Spalten angezeigt
                     </p>
+                </div>
+            </div>
+
+            <div className="content-card">
+                <h2>Ausgewählte Auswertung</h2>
+
+                <div className="selected-column-list">
+                    {selectedQuestionColumn ? (
+                        <span>Grafik 1: {selectedQuestionColumn}</span>
+                    ) : (
+                        <span>Grafik 1: Noch keine Spalte gewählt</span>
+                    )}
+
+                    {selectedSecondQuestionColumn ? (
+                        <span>Grafik 2: {selectedSecondQuestionColumn}</span>
+                    ) : (
+                        <span>Grafik 2: Keine zweite Spalte</span>
+                    )}
                 </div>
             </div>
 
