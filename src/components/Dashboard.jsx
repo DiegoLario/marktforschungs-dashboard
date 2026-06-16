@@ -22,6 +22,7 @@ ChartJS.register(
 function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToConfig }) {
     const [filters, setFilters] = useState({});
     const [questionDisplayName, setQuestionDisplayName] = useState("");
+    const [secondQuestionDisplayName, setSecondQuestionDisplayName] = useState("");
 
     const chartColors = [
         "#004678",
@@ -34,9 +35,17 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
         "#14b8a6"
     ];
 
+    const hasSecondQuestionColumn =
+        config.secondQuestionColumn &&
+        config.secondQuestionColumn !== config.questionColumn;
+
     const displayedQuestionName = questionDisplayName.trim()
         ? questionDisplayName.trim()
         : config.questionColumn;
+
+    const displayedSecondQuestionName = secondQuestionDisplayName.trim()
+        ? secondQuestionDisplayName.trim()
+        : config.secondQuestionColumn;
 
     const filteredRows = useMemo(() => {
         return fileData.rows.filter((row) => {
@@ -63,6 +72,23 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
             });
     }, [filters]);
 
+    const activeFilterGroups = useMemo(() => {
+        const groupedFilters = {};
+
+        activeFilters.forEach((filter) => {
+            if (!groupedFilters[filter.column]) {
+                groupedFilters[filter.column] = [];
+            }
+
+            groupedFilters[filter.column].push(filter.value);
+        });
+
+        return Object.entries(groupedFilters).map(([column, values]) => ({
+            column,
+            values
+        }));
+    }, [activeFilters]);
+
     const filteredPercent = useMemo(() => {
         if (analysis.totalRows === 0) {
             return 0;
@@ -71,92 +97,80 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
         return Math.round((filteredRows.length / analysis.totalRows) * 100);
     }, [filteredRows.length, analysis.totalRows]);
 
-    const answerStats = useMemo(() => {
-        const counts = {};
-
-        filteredRows.forEach((row) => {
-            const rawValue = row[config.questionColumn];
-
-            if (isEmptyValue(rawValue)) {
-                return;
-            }
-
-            const value = String(rawValue).trim();
-
-            if (!counts[value]) {
-                counts[value] = 0;
-            }
-
-            counts[value]++;
-        });
-
-        const validAnswerCount = Object.values(counts).reduce((total, count) => {
-            return total + count;
-        }, 0);
-
-        return Object.entries(counts)
-            .map(([answer, count]) => ({
-                answer,
-                count,
-                percent:
-                    validAnswerCount > 0
-                        ? Math.round((count / validAnswerCount) * 100)
-                        : 0
-            }))
-            .sort((a, b) => b.count - a.count);
+    const primaryAnswerStats = useMemo(() => {
+        return getAnswerStats(filteredRows, config.questionColumn);
     }, [filteredRows, config.questionColumn]);
 
-    const topAnswers = useMemo(() => {
-        return answerStats.slice(0, 3);
-    }, [answerStats]);
+    const secondAnswerStats = useMemo(() => {
+        if (!hasSecondQuestionColumn) {
+            return [];
+        }
 
-    const numericStats = useMemo(() => {
-        const numericValues = filteredRows
-            .map((row) => convertToNumber(row[config.questionColumn]))
-            .filter((value) => value !== null);
+        return getAnswerStats(filteredRows, config.secondQuestionColumn);
+    }, [filteredRows, config.secondQuestionColumn, hasSecondQuestionColumn]);
 
-        return {
-            isNumeric: numericValues.length > 0,
-            numericCount: numericValues.length
-        };
+    const primaryNumericStats = useMemo(() => {
+        return getNumericState(filteredRows, config.questionColumn);
     }, [filteredRows, config.questionColumn]);
 
-    const missingAnswers = useMemo(() => {
-        return filteredRows.filter((row) => {
-            const value = row[config.questionColumn];
-            return isEmptyValue(value);
-        }).length;
+    const secondNumericStats = useMemo(() => {
+        if (!hasSecondQuestionColumn) {
+            return {
+                isNumeric: false,
+                numericCount: 0
+            };
+        }
+
+        return getNumericState(filteredRows, config.secondQuestionColumn);
+    }, [filteredRows, config.secondQuestionColumn, hasSecondQuestionColumn]);
+
+    const primaryMissingAnswers = useMemo(() => {
+        return getMissingCount(filteredRows, config.questionColumn);
     }, [filteredRows, config.questionColumn]);
 
-    const validAnswers = Math.max(filteredRows.length - missingAnswers, 0);
-    const mostCommonAnswer = answerStats.length > 0 ? answerStats[0] : null;
+    const secondMissingAnswers = useMemo(() => {
+        if (!hasSecondQuestionColumn) {
+            return 0;
+        }
 
-    const limitedBarStats = useMemo(() => {
-        return answerStats.slice(0, 8);
-    }, [answerStats]);
+        return getMissingCount(filteredRows, config.secondQuestionColumn);
+    }, [filteredRows, config.secondQuestionColumn, hasSecondQuestionColumn]);
+
+    const validAnswers = Math.max(filteredRows.length - primaryMissingAnswers, 0);
+    const topAnswers = primaryAnswerStats.slice(0, 3);
+    const mostCommonAnswer = primaryAnswerStats.length > 0 ? primaryAnswerStats[0] : null;
+    const secondMostCommonAnswer = secondAnswerStats.length > 0 ? secondAnswerStats[0] : null;
+
+    const limitedPrimaryBarStats = useMemo(() => {
+        return primaryAnswerStats.slice(0, 8);
+    }, [primaryAnswerStats]);
 
     const limitedDoughnutStats = useMemo(() => {
-        return answerStats.slice(0, 8);
-    }, [answerStats]);
+        if (hasSecondQuestionColumn) {
+            return secondAnswerStats.slice(0, 8);
+        }
+
+        return primaryAnswerStats.slice(0, 8);
+    }, [hasSecondQuestionColumn, secondAnswerStats, primaryAnswerStats]);
 
     const useHorizontalBarChart = useMemo(() => {
-        const hasManyAnswers = limitedBarStats.length > 5;
-        const hasLongLabels = limitedBarStats.some((item) => item.answer.length > 18);
+        const hasManyAnswers = limitedPrimaryBarStats.length > 5;
+        const hasLongLabels = limitedPrimaryBarStats.some((item) => item.answer.length > 18);
 
         return hasManyAnswers || hasLongLabels;
-    }, [limitedBarStats]);
+    }, [limitedPrimaryBarStats]);
 
     const barChartData = useMemo(() => {
         return {
-            labels: limitedBarStats.map((item) => item.answer),
+            labels: limitedPrimaryBarStats.map((item) => item.answer),
             datasets: [
                 {
                     label: "Anzahl Antworten",
-                    data: limitedBarStats.map((item) => item.count),
-                    backgroundColor: limitedBarStats.map((_, index) => {
+                    data: limitedPrimaryBarStats.map((item) => item.count),
+                    backgroundColor: limitedPrimaryBarStats.map((_, index) => {
                         return index === 0 ? "#004678" : "#83b9dd";
                     }),
-                    borderColor: limitedBarStats.map((_, index) => {
+                    borderColor: limitedPrimaryBarStats.map((_, index) => {
                         return index === 0 ? "#00385f" : "#0477bf";
                     }),
                     borderWidth: 1,
@@ -164,7 +178,7 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
                 }
             ]
         };
-    }, [limitedBarStats]);
+    }, [limitedPrimaryBarStats]);
 
     const doughnutChartData = useMemo(() => {
         return {
@@ -195,7 +209,7 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
                 tooltip: {
                     callbacks: {
                         label: (context) => {
-                            const item = limitedBarStats[context.dataIndex];
+                            const item = limitedPrimaryBarStats[context.dataIndex];
 
                             if (!item) {
                                 return `${context.raw} Antworten`;
@@ -229,7 +243,7 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
                 }
             }
         };
-    }, [useHorizontalBarChart, limitedBarStats]);
+    }, [useHorizontalBarChart, limitedPrimaryBarStats]);
 
     const doughnutChartOptions = useMemo(() => {
         return {
@@ -288,6 +302,18 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
         });
     }
 
+    function toggleAllFilterValues(column, values) {
+        setFilters((currentFilters) => {
+            const currentValues = currentFilters[column] || [];
+            const allValuesSelected = currentValues.length === values.length;
+
+            return {
+                ...currentFilters,
+                [column]: allValuesSelected ? [] : values
+            };
+        });
+    }
+
     function resetFilters() {
         setFilters({});
     }
@@ -342,7 +368,7 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
 
                 <div className="summary-card">
                     <span className="orange">Missings</span>
-                    <strong className="orange">{missingAnswers}</strong>
+                    <strong className="orange">{primaryMissingAnswers}</strong>
                 </div>
 
                 <div className="summary-card">
@@ -355,19 +381,42 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
                 <div className="content-card compact-card">
                     <h2>Aktive Filter</h2>
 
-                    {activeFilters.length === 0 ? (
+                    {activeFilterGroups.length === 0 ? (
                         <p className="muted-text">Keine Filter aktiv</p>
                     ) : (
                         <div className="active-filter-list">
-                            {activeFilters.map((filter) => (
-                                <div
-                                    className="active-filter-item"
-                                    key={`${filter.column}-${filter.value}`}
-                                >
-                                    <strong>{filter.column}</strong>
-                                    <span>{filter.value}</span>
-                                </div>
-                            ))}
+                            {activeFilterGroups.map((group) => {
+                                const useCompactView = group.values.length > 3;
+
+                                if (useCompactView) {
+                                    return (
+                                        <div
+                                            className="active-filter-item active-filter-summary-item"
+                                            key={group.column}
+                                        >
+                                            <div>
+                                                <strong>{group.column}</strong>
+                                                <span>{group.values.length} Werte ausgewählt</span>
+                                            </div>
+
+                                            <small>
+                                                {group.values.slice(0, 3).join(", ")}
+                                                {group.values.length > 3 ? " ..." : ""}
+                                            </small>
+                                        </div>
+                                    );
+                                }
+
+                                return group.values.map((value) => (
+                                    <div
+                                        className="active-filter-item"
+                                        key={`${group.column}-${value}`}
+                                    >
+                                        <strong>{group.column}</strong>
+                                        <span>{value}</span>
+                                    </div>
+                                ));
+                            })}
                         </div>
                     )}
                 </div>
@@ -405,14 +454,38 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
                     </button>
                 </div>
 
-                <div className="multi-filter-grid">
+                <div className={`multi-filter-grid ${config.filterColumns.length > 3 ? "multi-filter-grid-compact" : ""}`}>
                     {config.filterColumns.map((column) => {
                         const values = getUniqueValues(column);
                         const selectedValues = filters[column] || [];
+                        const hasManyOptions = values.length > 10;
+                        const allValuesSelected = selectedValues.length === values.length && values.length > 0;
 
                         return (
                             <div className="multi-filter-group" key={column}>
-                                <h3>{column}</h3>
+                                <div className="multi-filter-header">
+                                    <div className="multi-filter-title">
+                                        <h3>{column}</h3>
+
+                                        {selectedValues.length === 0 ? (
+                                            <small>Alle Werte aktiv</small>
+                                        ) : (
+                                            <small>
+                                                {selectedValues.length} von {values.length} ausgewählt
+                                            </small>
+                                        )}
+                                    </div>
+
+                                    {hasManyOptions && (
+                                        <button
+                                            type="button"
+                                            className="multi-filter-select-all"
+                                            onClick={() => toggleAllFilterValues(column, values)}
+                                        >
+                                            {allValuesSelected ? "Abwählen" : "Alle"}
+                                        </button>
+                                    )}
+                                </div>
 
                                 {values.length === 0 ? (
                                     <p className="muted-text">Keine Werte vorhanden.</p>
@@ -437,34 +510,60 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
             </div>
 
             <div className="content-card">
-                <h2>Ausgewertete Spalte</h2>
+                <h2>Ausgewertete Spalten</h2>
 
                 <p className="muted-text">
-                    Aktuell wird die Spalte <strong>{config.questionColumn}</strong> ausgewertet.
+                    Grafik 1 wertet die Spalte <strong>{config.questionColumn}</strong> aus.
+                    {hasSecondQuestionColumn && (
+                        <>
+                            {" "}Grafik 2 wertet die Spalte <strong>{config.secondQuestionColumn}</strong> aus.
+                        </>
+                    )}
                 </p>
 
-                <div className="display-name-field">
-                    <label>
-                        Anzeigename für diese Spalte
-                        <input
-                            type="text"
-                            placeholder="Optionaler Anzeigename, z. B. Zufriedenheit"
-                            value={questionDisplayName}
-                            onChange={(event) => setQuestionDisplayName(event.target.value)}
-                        />
-                    </label>
+                <div className="form-grid">
+                    <div className="display-name-field">
+                        <label>
+                            Anzeigename für Grafik 1
+                            <input
+                                type="text"
+                                placeholder="Optionaler Anzeigename, z. B. Zufriedenheit"
+                                value={questionDisplayName}
+                                onChange={(event) => setQuestionDisplayName(event.target.value)}
+                            />
+                        </label>
+                    </div>
+
+                    {hasSecondQuestionColumn && (
+                        <div className="display-name-field">
+                            <label>
+                                Anzeigename für Grafik 2
+                                <input
+                                    type="text"
+                                    placeholder="Optionaler Anzeigename, z. B. Weiterempfehlung"
+                                    value={secondQuestionDisplayName}
+                                    onChange={(event) => setSecondQuestionDisplayName(event.target.value)}
+                                />
+                            </label>
+                        </div>
+                    )}
                 </div>
-
-                <p className="muted-text">
-                    Angezeigt als: <strong>{displayedQuestionName}</strong>
-                </p>
             </div>
 
-            {!numericStats.isNumeric && (
+            {!primaryNumericStats.isNumeric && (
                 <div className="warning-box">
                     <p>
-                        Hinweis: In der ausgewählten Spalte wurden keine numerischen Werte erkannt.
+                        Hinweis: In der ersten ausgewählten Spalte wurden keine numerischen Werte erkannt.
                         Es wird deshalb keine Durchschnittsberechnung angezeigt. Die Grafiken zeigen die Verteilung der gültigen Antworten.
+                    </p>
+                </div>
+            )}
+
+            {hasSecondQuestionColumn && !secondNumericStats.isNumeric && (
+                <div className="warning-box">
+                    <p>
+                        Hinweis: In der zweiten ausgewählten Spalte wurden keine numerischen Werte erkannt.
+                        Die zweite Grafik zeigt deshalb die prozentuale Verteilung der gültigen Antworten.
                     </p>
                 </div>
             )}
@@ -475,10 +574,10 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
                     <p className="muted-text">
                         {useHorizontalBarChart
                             ? "Viele oder lange Antwortwerte werden horizontal dargestellt."
-                            : "Antwortverteilung der ausgewählten Spalte."}
+                            : "Antwortverteilung der ersten ausgewählten Spalte."}
                     </p>
 
-                    {answerStats.length === 0 ? (
+                    {primaryAnswerStats.length === 0 ? (
                         <p>Keine gültigen Werte für das Diagramm vorhanden.</p>
                     ) : (
                         <div className="chart-wrapper">
@@ -488,12 +587,19 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
                 </div>
 
                 <div className="content-card chart-card">
-                    <h2>Prozentuale Verteilung: {displayedQuestionName}</h2>
+                    <h2>
+                        {hasSecondQuestionColumn
+                            ? `Prozentuale Verteilung: ${displayedSecondQuestionName}`
+                            : `Prozentuale Verteilung: ${displayedQuestionName}`}
+                    </h2>
+
                     <p className="muted-text">
-                        Prozentuale Verteilung der häufigsten Antworten.
+                        {hasSecondQuestionColumn
+                            ? "Prozentuale Verteilung der zweiten ausgewählten Spalte."
+                            : "Prozentuale Verteilung der ersten ausgewählten Spalte."}
                     </p>
 
-                    {answerStats.length === 0 ? (
+                    {limitedDoughnutStats.length === 0 ? (
                         <p>Keine gültigen Werte für das Diagramm vorhanden.</p>
                     ) : (
                         <div className="chart-wrapper doughnut-wrapper">
@@ -538,9 +644,17 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
                         </div>
                     )}
 
+                    {hasSecondQuestionColumn && secondMostCommonAnswer && (
+                        <div className="insight-item">
+                            💡 Bei <strong>{displayedSecondQuestionName}</strong> ist die häufigste Antwort{" "}
+                            <strong>{secondMostCommonAnswer.answer}</strong> mit{" "}
+                            <strong>{secondMostCommonAnswer.percent}%</strong>.
+                        </div>
+                    )}
+
                     {topAnswers.length > 1 && (
                         <div className="insight-item">
-                            💡 Die Top-{topAnswers.length} Antworten machen zusammen{" "}
+                            💡 Die Top-{topAnswers.length} Antworten der ersten Grafik machen zusammen{" "}
                             <strong>
                                 {topAnswers.reduce((total, item) => total + item.percent, 0)}%
                             </strong>{" "}
@@ -549,13 +663,73 @@ function Dashboard({ fileData, analysis, config, onReset, onOpenTable, onBackToC
                     )}
 
                     <div className="insight-item">
-                        💡 Bei der ausgewählten Spalte wurden{" "}
-                        <strong>{missingAnswers}</strong> Missings gefunden.
+                        💡 Bei der ersten ausgewählten Spalte wurden{" "}
+                        <strong>{primaryMissingAnswers}</strong> Missings gefunden.
                     </div>
+
+                    {hasSecondQuestionColumn && (
+                        <div className="insight-item">
+                            💡 Bei der zweiten ausgewählten Spalte wurden{" "}
+                            <strong>{secondMissingAnswers}</strong> Missings gefunden.
+                        </div>
+                    )}
                 </div>
             </div>
         </section>
     );
+}
+
+function getAnswerStats(rows, column) {
+    const counts = {};
+
+    rows.forEach((row) => {
+        const rawValue = row[column];
+
+        if (isEmptyValue(rawValue)) {
+            return;
+        }
+
+        const value = String(rawValue).trim();
+
+        if (!counts[value]) {
+            counts[value] = 0;
+        }
+
+        counts[value]++;
+    });
+
+    const validAnswerCount = Object.values(counts).reduce((total, count) => {
+        return total + count;
+    }, 0);
+
+    return Object.entries(counts)
+        .map(([answer, count]) => ({
+            answer,
+            count,
+            percent:
+                validAnswerCount > 0
+                    ? Math.round((count / validAnswerCount) * 100)
+                    : 0
+        }))
+        .sort((a, b) => b.count - a.count);
+}
+
+function getNumericState(rows, column) {
+    const numericValues = rows
+        .map((row) => convertToNumber(row[column]))
+        .filter((value) => value !== null);
+
+    return {
+        isNumeric: numericValues.length > 0,
+        numericCount: numericValues.length
+    };
+}
+
+function getMissingCount(rows, column) {
+    return rows.filter((row) => {
+        const value = row[column];
+        return isEmptyValue(value);
+    }).length;
 }
 
 function convertToNumber(value) {
